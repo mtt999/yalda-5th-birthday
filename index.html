@@ -195,6 +195,13 @@
     font-size:16px;
     padding:12px 0 4px;
   }
+  .rsvp-privacy{
+    font-size:12px;
+    text-align:center;
+    color:var(--brown);
+    opacity:.5;
+    margin:14px 0 0;
+  }
 
   .host-link{
     position: fixed;
@@ -293,11 +300,12 @@
     <h2>Will you be there? 🎉</h2>
     <p class="rsvp-sub">Let us know you're coming so we can plan!</p>
     <div class="rsvp-form" id="rsvpForm">
-      <input type="text" id="rsvpName" placeholder="Your name" maxlength="60">
-      <input type="number" id="rsvpGuests" placeholder="Total people attending (including children)" min="1" max="30">
+      <input type="text" id="rsvpName" placeholder="Your child's name" maxlength="60">
+      <input type="number" id="rsvpGuests" placeholder="Total people attending (including children)" min="1" max="30" inputmode="numeric">
       <button class="btn-rsvp" id="rsvpBtn" onclick="handleRSVP()">RSVP now</button>
     </div>
     <div class="rsvp-success" id="rsvpSuccess" style="display:none"></div>
+    <p class="rsvp-privacy">🔒 This information will only be visible to Yalda's parents.</p>
   </div>
 
   <footer>Shared list · anyone with this link can view and claim items</footer>
