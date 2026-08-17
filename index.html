@@ -136,6 +136,65 @@
   .btn-confirm{background:var(--pink-deep);color:white;padding:8px 14px;}
   .btn-cancel{background:transparent;color:var(--brown);opacity:.6;padding:8px 8px;}
   .no-link{font-size:12px;color: var(--brown);opacity:.45;}
+  .item-name-link{
+    font-family:'Fredoka',sans-serif;
+    font-weight:600;
+    font-size:17px;
+    color: var(--brown);
+    text-decoration:none;
+    display:block;
+    margin:0 0 3px;
+  }
+  .item-name-link:hover{color:var(--pink-deep);text-decoration:underline;}
+  .rsvp-section{
+    margin-top:36px;
+    background: var(--card);
+    border: 2px dashed var(--pink);
+    border-radius: 18px;
+    padding: 24px 20px 20px;
+    box-shadow: var(--shadow);
+  }
+  .rsvp-section h2{
+    font-family:'Fredoka',sans-serif;
+    font-size:22px;
+    color:var(--pink-deep);
+    margin:0 0 6px;
+    text-align:center;
+  }
+  .rsvp-sub{font-size:13.5px;text-align:center;margin:0 0 18px;opacity:.8;}
+  .rsvp-form{display:flex;flex-direction:column;gap:10px;}
+  .rsvp-form input{
+    border:1.5px solid var(--pink);
+    border-radius:12px;
+    padding:10px 14px;
+    font-size:14px;
+    font-family:'Nunito',sans-serif;
+    color:var(--brown);
+    background:#fff;
+  }
+  .rsvp-form input:focus{outline:2px solid var(--pink-deep);outline-offset:1px;}
+  .btn-rsvp{
+    background:var(--pink-deep);
+    color:white;
+    padding:11px 20px;
+    border-radius:999px;
+    font-size:14px;
+    font-family:'Nunito',sans-serif;
+    font-weight:700;
+    border:none;
+    cursor:pointer;
+    width:100%;
+    transition:transform .12s ease;
+  }
+  .btn-rsvp:hover{background:#d6678a;}
+  .btn-rsvp:disabled{opacity:.5;cursor:not-allowed;}
+  .rsvp-success{
+    text-align:center;
+    color:var(--green);
+    font-weight:700;
+    font-size:16px;
+    padding:12px 0 4px;
+  }
 
   .host-link{
     position: fixed;
@@ -222,13 +281,25 @@
 
   <div class="host-note">Gifts are not necessary, but if you insist, you can use this list for inspo. If you ordered or already purchased one of these items, please kindly mark it as purchased. Thank you, and looking forward to celebrating Yalda's birthday with you!!!</div>
 
-  <div class="hint">Tap <strong>I'll bring this</strong> to claim an item. It'll show that it's been purchased so others don't double up.</div>
+  <div class="hint">Tap <strong>I will purchase</strong> on an item to claim it. It will show as purchased so others don't double up.</div>
 
   <div class="list" id="list">
     <div class="empty">Loading gift ideas…</div>
   </div>
 
   <div class="status" id="status"></div>
+
+  <div class="rsvp-section">
+    <h2>Will you be there? 🎉</h2>
+    <p class="rsvp-sub">Let us know you're coming so we can plan!</p>
+    <div class="rsvp-form" id="rsvpForm">
+      <input type="text" id="rsvpName" placeholder="Your name" maxlength="60">
+      <input type="number" id="rsvpGuests" placeholder="Total people attending (including children)" min="1" max="30">
+      <button class="btn-rsvp" id="rsvpBtn" onclick="handleRSVP()">RSVP now</button>
+    </div>
+    <div class="rsvp-success" id="rsvpSuccess" style="display:none"></div>
+  </div>
+
   <footer>Shared list · anyone with this link can view and claim items</footer>
 </div>
 
@@ -346,12 +417,17 @@ function render() {
     const card = document.createElement('div');
     card.className = 'card' + (item.locked ? '' : (claimedBy ? ' taken' : ''));
     const info = document.createElement('div'); info.className = 'item-info';
-    const nameEl = document.createElement('p'); nameEl.className = 'item-name'; nameEl.textContent = item.name;
-    info.appendChild(nameEl);
-    if (item.url && !claimedBy) {
-      const link = document.createElement('a'); link.className = 'item-link'; link.href = item.url;
-      link.target = '_blank'; link.rel = 'noopener noreferrer'; link.textContent = 'View item ↗';
-      info.appendChild(link);
+    if (item.url) {
+      const nameLink = document.createElement('a');
+      nameLink.className = 'item-name-link';
+      nameLink.href = item.url;
+      nameLink.target = '_blank';
+      nameLink.rel = 'noopener noreferrer';
+      nameLink.textContent = item.name;
+      info.appendChild(nameLink);
+    } else {
+      const nameEl = document.createElement('p'); nameEl.className = 'item-name'; nameEl.textContent = item.name;
+      info.appendChild(nameEl);
     }
     card.appendChild(info);
     if (item.locked) { listEl.appendChild(card); return; }
@@ -361,7 +437,7 @@ function render() {
       badge.innerHTML = isHost ? ('🎁 Purchased by ' + escapeHtml(claimedBy)) : '🎁 Purchased';
       claimArea.appendChild(badge);
     } else {
-      const btn = document.createElement('button'); btn.className = 'btn-claim'; btn.textContent = "I'll bring this";
+      const btn = document.createElement('button'); btn.className = 'btn-claim'; btn.textContent = "I will purchase";
       btn.addEventListener('click', () => showClaimForm(claimArea, item));
       claimArea.appendChild(btn);
     }
@@ -414,6 +490,25 @@ function showClaimForm(claimArea, item) {
   input.addEventListener('keydown', e => { if (e.key === 'Enter') confirmBtn.click(); });
   form.appendChild(input); form.appendChild(confirmBtn); form.appendChild(cancelBtn);
   claimArea.appendChild(form); input.focus();
+}
+
+async function handleRSVP() {
+  const name   = document.getElementById('rsvpName').value.trim();
+  const guests = document.getElementById('rsvpGuests').value.trim();
+  if (!name)   { document.getElementById('rsvpName').focus(); return; }
+  if (!guests) { document.getElementById('rsvpGuests').focus(); return; }
+  const btn = document.getElementById('rsvpBtn');
+  btn.disabled = true; btn.textContent = 'Sending…';
+  try {
+    await jsonp(SCRIPT_URL + '?action=rsvp&name=' + encodeURIComponent(name) + '&guests=' + encodeURIComponent(guests));
+    document.getElementById('rsvpForm').style.display = 'none';
+    const s = document.getElementById('rsvpSuccess');
+    s.style.display = 'block';
+    s.textContent = '🎉 Thanks, ' + name + '! We\'ll see you at the party.';
+  } catch(e) {
+    btn.disabled = false; btn.textContent = 'RSVP now';
+    setStatus('Something went wrong. Please try again.', true);
+  }
 }
 
 loadAndRender();
